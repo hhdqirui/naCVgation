@@ -1,2 +1,2 @@
-web: pip install -r requirements.txt
+web: pip install opencv-python
 web: node app.js
