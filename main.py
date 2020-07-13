@@ -1,5 +1,5 @@
 import sys
-from cv2 import cv2
+import cv2
 import pytesseract
 import pyttsx3
 
