@@ -1,3 +1,5 @@
+var PORT = process.env.PORT || 3000;
+
 var express = require("express");
 var bodyParser = require("body-parser");
 var multer = require("multer");
@@ -117,4 +119,4 @@ app.post("/upload", (req, res) => {
     });
 })
 
-app.listen(3000, () => console.log("listening to port 3000"));
+app.listen(PORT, () => console.log(`listening to port ${PORT}`));
