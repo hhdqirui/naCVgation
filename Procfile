@@ -1,2 +1,2 @@
-web: pip install opencv-python
-web: node app.js
+web:pip list
+web:node app.js
