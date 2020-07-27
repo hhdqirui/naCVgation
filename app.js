@@ -4,9 +4,10 @@ var express = require("express");
 var bodyParser = require("body-parser");
 var multer = require("multer");
 var path = require("path");
-var urlencodedParser = bodyParser.urlencoded({extended: true});
-//var controller1 = require("./controllers/controller1");
+var iconv = require("iconv-lite");
+var urlencodedParser = bodyParser.urlencoded({extended: false});
 var gtts = require("gtts");
+const { render } = require("ejs");
 var spawn = require("child_process").spawn;
 
 // init app
@@ -35,35 +36,32 @@ var upload = multer({
 app.set("view engine", "ejs");
 
 app.use(express.static("./public"));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: true}));
+//app.use(bodyParser.json());
+//app.use(bodyParser.urlencoded({extended: true}));
 
-app.get("/", (req, res) => res.render("index"));
+app.get("/", (req, res) => {
+    res.charset = 'utf-8';
+    res.render("index", {qs: req.query});
+});
 
-// for testing
-app.get("/audio", (req, res) => {
-    res.render("audio", {
-        audioName: "../public/audio/test.mp3"
-    });
-})
-
-// app.get('/test.mp3', (req, res) => {
-//     res.sendFile('./public/audio/text.mp3');
-// });
-
-app.post("/upload", (req, res) => {
-  upload(req, res, (err) => {
+app.post("/upload", urlencodedParser, (req, res) => {
+    res.charset = 'utf-8';
+    console.log("in post upload: " + req.body);
+    upload(req, res, (err) => {
         if(err){
             res.render("index", {
+                qs: req.query,
                 msg: err
             });
         }
         else{
-            //console.log(req);
+            console.log("in else");
+            console.log(req.body);
             console.log(req.file);
             
             if(req.file == undefined){
 				res.render("index", {
+                    qs: req.query,
 					msg: "Error: No File Found"
 				});
 			}
@@ -74,17 +72,23 @@ app.post("/upload", (req, res) => {
                 console.log(img_dir_and_name);
 
                 // spawn child process
-                var process = spawn("python", ["./main.py", img_dir_and_name]);
+                var process = spawn("python", ["./main.py", img_dir_and_name, req.body.lang]);
                 var dataToSend;
                 process.stdout.on("data", function(data){
                     console.log("child process");
 
                     //get the data(extracted text of the image) from running the python script
-                    dataToSend = data.toString();
-                    console.log("datatosend: " + dataToSend);
+                    dataToSend = data.toString('binary');
+                    const buf = new Buffer(data, 'binary');
+                    dataToSend = iconv.decode(buf, 'GBK');
+                    console.log("====================\nextracted text:\n" + dataToSend + "====================");
 
                     // create speech audio using gtts and save under ./public/audio
-                    var speech = new gtts(dataToSend);
+                    var destLang = 'en';
+                    if(req.body.lang == 'chinese'){
+                        destLang = 'zh-cn';
+                    }
+                    var speech = new gtts(dataToSend, destLang);
                     var audio_dir_and_name = `./public/audio/${imgName}.mp3`;
 
                     console.log("before save");
@@ -97,6 +101,7 @@ app.post("/upload", (req, res) => {
                             // render
                             console.log('render');
 	        			    res.render("index", {
+                                qs: req.query,
 		        			    msg: "File uploaded!",
                                 file: `upload/${req.file.filename}`,
                                 txt: dataToSend,
