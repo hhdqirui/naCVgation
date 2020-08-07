@@ -10,6 +10,31 @@ var gtts = require("gtts");
 const { render } = require("ejs");
 var spawn = require("child_process").spawn;
 
+function langCode(lan){
+    lan = lan.toLowerCase();
+    if(lan == 'chinese'){
+        return 'zh-cn';
+    }
+    else if(lan == 'english'){
+        return 'en';
+    }
+    else if(lan == 'hindi'){
+        return 'hi';
+    }
+    else if(lan == 'tamil'){
+        return 'ta';
+    }
+    else if(lan == 'japanese'){
+        return 'ja';
+    }
+    else if(lan == 'korean'){
+        return 'ko'
+    }
+    else{
+        return 'en';
+    }
+}
+
 // init app
 var app = express();
 
@@ -84,10 +109,7 @@ app.post("/upload", urlencodedParser, (req, res) => {
                     console.log("====================\nextracted text:\n" + dataToSend + "====================");
 
                     // create speech audio using gtts and save under ./public/audio
-                    var destLang = 'en';
-                    if(req.body.lang == 'chinese'){
-                        destLang = 'zh-cn';
-                    }
+                    var destLang = langCode(req.body.lang);
                     var speech = new gtts(dataToSend, destLang);
                     var audio_dir_and_name = `./public/audio/${imgName}.mp3`;
 
